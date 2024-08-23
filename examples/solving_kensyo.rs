@@ -46,7 +46,7 @@ fn main() {
         "Memory usage with compression (16-bit integer): {:.2}GB",
         mem_usage_compressed as f64 / (1024.0 * 1024.0 * 1024.0)
     );
-    game.allocate_memory(true);
+    game.allocate_memory(false);
 
     let max_num_iterations = 4_294_967_295u32;
     let target_exploitability = game.tree_config().starting_pot as f32 * 0.001;
