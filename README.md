@@ -13,7 +13,7 @@ Rust で書かれたオープンソースのポストフロップ ソルバー �
 
 **関連リポジトリ**
 - Web アプリ (WASM ポストフロップ): https://github.com/b-inary/wasm-postflat
-- デスクトップ アプリ (デスクトップ ポストフロップ): https://github.com/b-inary/desktop-postflat
+- デスクトップ アプリ (デスクトップ ポストフロップ): https://github.com/b-inary/desktop-postflop
 
 **注:**
 このライブラリの主な目的は、GUI アプリケーション ([WASM ポストフロップ] および [デスクトップ ポストフロップ]) のバックエンド エンジンとして機能することです。
