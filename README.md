@@ -7,24 +7,23 @@
 
 ---
 
-An open-source postflop solver library written in Rust
+Rust で書かれたオープンソースのポストフロップ ソルバー ライブラリ
 
-Documentation: https://b-inary.github.io/postflop_solver/postflop_solver/
+ドキュメント: https://b-inary.github.io/postflat_solver/postflat_solver/
 
-**Related repositories**
-- Web app (WASM Postflop): https://github.com/b-inary/wasm-postflop
-- Desktop app (Desktop Postflop): https://github.com/b-inary/desktop-postflop
+**関連リポジトリ**
+- Web アプリ (WASM ポストフロップ): https://github.com/b-inary/wasm-postflat
+- デスクトップ アプリ (デスクトップ ポストフロップ): https://github.com/b-inary/desktop-postflat
 
-**Note:**
-The primary purpose of this library is to serve as a backend engine for the GUI applications ([WASM Postflop] and [Desktop Postflop]).
-The direct use of this library by the users/developers is not a critical purpose by design.
-Therefore, breaking changes are often made without version changes.
-See [CHANGES.md](CHANGES.md) for details about breaking changes.
-
+**注:**
+このライブラリの主な目的は、GUI アプリケーション ([WASM ポストフロップ] および [デスクトップ ポストフロップ]) のバックエンド エンジンとして機能することです。
+ユーザー/開発者によるこのライブラリの直接使用は、設計上、重要な目的ではありません。
+そのため、バージョンの変更なしで重大な変更が行われることがよくあります。
+重大な変更の詳細については、[CHANGES.md](CHANGES.md) を参照してください。
 [WASM Postflop]: https://github.com/b-inary/wasm-postflop
 [Desktop Postflop]: https://github.com/b-inary/desktop-postflop
 
-## Usage
+## 使用方法
 
 - `Cargo.toml`
 
@@ -33,11 +32,11 @@ See [CHANGES.md](CHANGES.md) for details about breaking changes.
 postflop-solver = { git = "https://github.com/b-inary/postflop-solver" }
 ```
 
-- Examples
+- 例
 
-You can find examples in the [examples](examples) directory.
+例は [examples](examples) ディレクトリにあります。
 
-If you have cloned this repository, you can run the example with the following command:
+このリポジトリをクローンした場合は、次のコマンドで例を実行できます。
 
 ```sh
 $ cargo run --release --example basic
@@ -45,40 +44,40 @@ $ cargo run --release --example basic
 
 ## Implementation details
 
-- **Algorithm**: The solver uses the state-of-the-art [Discounted CFR] algorithm.
-  Currently, the value of γ is set to 3.0 instead of the 2.0 recommended in the original paper.
-  Also, the solver resets the cumulative strategy when the number of iterations is a power of 4.
-- **Performance**: The solver engine is highly optimized for performance with maintainable code.
-  The engine supports multithreading by default, and it takes full advantage of unsafe Rust in hot spots.
-  The developer reviews the assembly output from the compiler and ensures that SIMD instructions are used as much as possible.
-  Combined with the algorithm described above, the performance surpasses paid solvers such as PioSOLVER and GTO+.
-- **Isomorphism**: The solver does not perform any abstraction.
-  However, isomorphic chances (turn and river deals) are combined into one.
-  For example, if the flop is monotone, the three non-dealt suits are isomorphic, allowing us to skip the calculation for two of the three suits.
-- **Precision**: 32-bit floating-point numbers are used in most places.
-  When calculating summations, temporary values use 64-bit floating-point numbers.
-  There is also a compression option where each game node stores the values by 16-bit integers with a single 32-bit floating-point scaling factor.
-- **Bunching effect**: At the time of writing, this is the only implementation that can handle the bunching effect.
-  It supports up to four folded players (6-max game).
-  The implementation correctly counts the number of card combinations and does not rely on heuristics such as manipulating the probability distribution of the deck.
-  Note, however, that enabling the bunching effect increases the time complexity of the evaluation at the terminal nodes and slows down the computation significantly.
+- **Algorithm**: ソルバーは最先端の [Discounted CFR] アルゴリズムを使用します。
+  現在、γ の値は、元の論文で推奨されている 2.0 ではなく 3.0 に設定されています。
+  また、ソルバーは、反復回数が 4 の累乗になると累積戦略をリセットします。
+- **Performance**: ソルバー エンジンは、保守可能なコードでパフォーマンスが最適化されています。
+  エンジンはデフォルトでマルチスレッドをサポートし、ホット スポットで安全でない Rust を最大限に活用します。
+  開発者はコンパイラからのアセンブリ出力を確認し、SIMD 命令が可能な限り使用されるようにします。
+  上記のアルゴリズムと組み合わせると、パフォーマンスは PioSOLVER や GTO+ などの有料ソルバーを上回ります。
+- **同型写像(抽象化)**: ソルバーは抽象化を一切行いません。
+  ただし、同型チャンス (ターンとリバーのディール) は 1 つにまとめられます。
+  たとえば、フロップが単調な場合、ディールされていない 3 つのスーツは同型であるため、3 つのスーツのうち 2 つの計算をスキップできます。
+- **精度**: ほとんどの場所で 32 ビット浮動小数点数が使用されます。
+  合計を計算する場合、一時的な値には 64 ビット浮動小数点数が使用されます。
+  各ゲーム ノードが単一の 32 ビット浮動小数点スケーリング係数を使用して 16 ビット整数で値を格納する圧縮オプションもあります。
+- **バンチング効果**: 執筆時点では、これがバンチング効果を処理できる唯一の実装です。
+  最大 4 人のフォールド プレイヤー (6 人制ゲーム) をサポートします。
+  この実装はカードの組み合わせの数を正しくカウントし、デッキの確率分布を操作するなどのヒューリスティックに依存しません。
+  ただし、バンチング効果を有効にすると、ターミナル ノードでの評価の時間計算量が増加し、計算が大幅に遅くなることに注意してください。
 
 [Discounted CFR]: https://arxiv.org/abs/1809.04040
 
 ## Crate features
 
-- `bincode`: Uses [bincode] crate (2.0.0-rc.3) to serialize and deserialize the `PostFlopGame` struct.
-  This feature is required to save and load the game tree.
-  Enabled by default.
-- `custom-alloc`: Uses custom memory allocator in solving process (only available in nightly Rust).
-  It significantly reduces the number of calls of the default allocator, so it is recommended to use this feature when the default allocator is not so efficient.
-  Note that this feature assumes that, at most, only one instance of `PostFlopGame` is available when solving in a program.
-  Disabled by default.
-- `rayon`: Uses [rayon] crate for parallelization.
-  Enabled by default.
-- `zstd`: Uses [zstd] crate to compress and decompress the game tree.
-  This feature is required to save and load the game tree with compression.
-  Disabled by default.
+- `bincode`: [bincode] クレート (2.0.0-rc.3) を使用して、`PostFlopGame` 構造体をシリアル化およびデシリアル化します。
+  この機能は、ゲームツリーを保存およびロードするために必要です。  
+  デフォルトで有効になっています。
+- `custom-alloc`: 解決プロセスでカスタム メモリ アロケータを使用します (ナイトリー Rust でのみ使用可能)。
+  デフォルトのアロケータの呼び出し回数が大幅に削減されるため、デフォルトのアロケータがそれほど効率的でない場合にこの機能を使用することをお勧めします。
+  この機能は、プログラムで解決するときに、最大で 1 つの `PostFlopGame` インスタンスのみが使用可能であると想定していることに注意してください。
+  デフォルトでは無効になっています。
+- `rayon`: 並列化に [rayon] クレートを使用します。
+  デフォルトで有効になっています。
+- `zstd`: [zstd] クレートを使用して、ゲームツリーを圧縮および解凍します。
+  この機能は、ゲームツリーを圧縮して保存およびロードするために必要です。
+  デフォルトでは無効になっています。
 
 [bincode]: https://github.com/bincode-org/bincode
 [rayon]: https://github.com/rayon-rs/rayon
