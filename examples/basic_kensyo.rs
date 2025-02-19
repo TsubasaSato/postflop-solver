@@ -71,7 +71,13 @@ fn main() {
     let max_num_iterations = 1000;
     let target_exploitability = game.tree_config().starting_pot as f32 * 0.005; // ポットの0.5%
     let exploitability = solve(&mut game, max_num_iterations, target_exploitability, true);
+    // 計算量の導出
+    let num_private_hands = 1;
+    let num_terminal_nodes = action_tree.get_num_terminal_nodes();
+
     println!("Exploitability: {:.2}", exploitability);
+
+    get_num_terminal_nodes();
 
     // 手動でゲームの解を求める
     // for i in 0..max_num_iterations {
