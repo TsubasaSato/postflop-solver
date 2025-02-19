@@ -1,4 +1,5 @@
 use postflop_solver::*;
+use std::time::Instant;
 
 fn main() {
     // 計測開始
@@ -40,6 +41,8 @@ fn main() {
     // ゲームツリーの構築
     // `ActionTree` は構築後に手動で編集可能
     let action_tree = ActionTree::new(tree_config).unwrap();
+    let num_terminal_nodes = action_tree.get_num_terminal_nodes();
+
     let mut game = PostFlopGame::with_config(card_config, action_tree).unwrap();
 
     // プレイヤーのプライベートハンドを取得
@@ -68,16 +71,17 @@ fn main() {
     // game.allocate_memory(true);
 
     // ゲームの解を求める
-    let max_num_iterations = 1000;
-    let target_exploitability = game.tree_config().starting_pot as f32 * 0.005; // ポットの0.5%
-    let exploitability = solve(&mut game, max_num_iterations, target_exploitability, true);
+    // let max_num_iterations = 1000;
+    // let target_exploitability = game.tree_config().starting_pot as f32 * 0.005; // ポットの0.5%
+    // let exploitability = solve(&mut game, max_num_iterations, target_exploitability, true);
     // 計算量の導出
     let num_private_hands = 1;
-    let num_terminal_nodes = action_tree.get_num_terminal_nodes();
+    println!("num_terminal_nodes: {:?}",num_terminal_nodes);
+    panic!("停止処理");
 
-    println!("Exploitability: {:.2}", exploitability);
+    // println!("Exploitability: {:.2}", exploitability);
 
-    get_num_terminal_nodes();
+    
 
     // 手動でゲームの解を求める
     // for i in 0..max_num_iterations {

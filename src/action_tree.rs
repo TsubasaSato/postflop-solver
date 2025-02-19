@@ -480,7 +480,14 @@ impl ActionTree {
         let mut root = self.root.lock();
         *root = ActionTreeNode::default();
         root.board_state = self.config.initial_state;
-        self.build_tree_and_count_terminal_nodes_recursive(&mut root, BuildTreeInfo::new(self.config.effective_stack), &mut self.num_terminal_nodes);
+        // 終端ノード数カウント用
+        let mut num_terminal_nodes = 0;
+        self.build_tree_and_count_terminal_nodes_recursive(
+            &mut root,
+            BuildTreeInfo::new(self.config.effective_stack),
+            &mut num_terminal_nodes,
+        );
+        self.num_terminal_nodes = num_terminal_nodes;
     }
 
     /// Recursively builds the action tree.
@@ -522,13 +529,18 @@ impl ActionTree {
             }
         }
     }
-    
+
     /// Recursively builds the action tree.
-    fn build_tree_and_count_terminal_nodes_recursive(&self, node: &mut ActionTreeNode, info: BuildTreeInfo, num_terminal_nodes:&mut i32) {
+    fn build_tree_and_count_terminal_nodes_recursive(
+        &self,
+        node: &mut ActionTreeNode,
+        info: BuildTreeInfo,
+        num_terminal_nodes: &mut i32,
+    ) {
         if node.is_terminal() {
             // do nothing
             // 終端ノード数をカウントする
-            num_terminal_nodes +=1;
+            *num_terminal_nodes += 1;
         } else if node.is_chance() {
             let next_state = match node.board_state {
                 BoardState::Flop => BoardState::Turn,
@@ -553,7 +565,7 @@ impl ActionTree {
             self.build_tree_and_count_terminal_nodes_recursive(
                 &mut node.children[0].lock(),
                 info.create_next(0, Action::Chance(0)),
-                &mut num_terminal_nodes,
+                num_terminal_nodes,
             );
         } else {
             self.push_actions(node, &info);
@@ -561,14 +573,14 @@ impl ActionTree {
                 self.build_tree_and_count_terminal_nodes_recursive(
                     &mut child.lock(),
                     info.create_next(node.player, *action),
-                    &mut num_terminal_nodes,
+                    num_terminal_nodes,
                 );
             }
         }
     }
 
     /// 終端ノード数の取得
-    pub fn get_num_terminal_nodes(&self) -> i32{
+    pub fn get_num_terminal_nodes(&self) -> i32 {
         self.num_terminal_nodes
     }
     /// Pushes all possible actions to the given node.
@@ -954,7 +966,6 @@ impl ActionTree {
         self.build_tree_recursive(
             &mut node.children[index].lock(),
             info.create_next(player, action),
-            
         );
 
         Ok(is_replaced)
