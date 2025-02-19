@@ -71,12 +71,17 @@ fn main() {
     // game.allocate_memory(true);
 
     // ゲームの解を求める
-    // let max_num_iterations = 1000;
-    // let target_exploitability = game.tree_config().starting_pot as f32 * 0.005; // ポットの0.5%
-    // let exploitability = solve(&mut game, max_num_iterations, target_exploitability, true);
+    let max_num_iterations = 1000;
+    let target_exploitability = game.tree_config().starting_pot as f32 * 0.005; // ポットの0.5%
+    let exploitability = solve(&mut game, max_num_iterations, target_exploitability, true);
     // 計算量の導出
-    let num_private_hands = 1;
-    println!("num_terminal_nodes: {:?}",num_terminal_nodes);
+    let num_private_hands = oop_cards_str.len() as i32;
+    println!("プレイヤーのハンド組み合わせ: {:?}", &num_private_hands);
+    println!("終端ノード数: {:?}", &num_terminal_nodes);
+    println!("可搾取量: {:?}", &exploitability);
+    let complexity = compute_complexity(num_private_hands , num_terminal_nodes, exploitability as f64);
+    println!("計算量: {:?}", complexity);
+
     panic!("停止処理");
 
     // println!("Exploitability: {:.2}", exploitability);
