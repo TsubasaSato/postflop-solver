@@ -2,13 +2,13 @@ use postflop_solver::*;
 use std::time::Instant;
 
 fn main() {
-    // 計測開始
-    let start_time = Instant::now();
-
     // OOPとIPのレンジを文字列形式で定義
     // `Range` のドキュメントを参照してフォーマットの詳細を確認
-    let oop_range = "66+,A8s+,A5s-A4s,AJo+,K9s+,KQo,QTs+,JTs,96s+,85s+,75s+,65s,54s";
-    let ip_range = "QQ-22,AQs-A2s,ATo+,K5s+,KJo+,Q8s+,J8s+,T7s+,96s+,86s+,75s+,64s+,53s+";
+    // let oop_range = "66+,A8s+,A5s-A4s,AJo+,K9s+,KQo,QTs+,JTs,96s+,85s+,75s+,65s,54s";
+    let ip_range = "A2s+";
+
+    let oop_range = "QQ-22,AQs-A2s,ATo+,K5s+,KJo+,Q8s+,J8s+,T7s+,96s+,86s+,75s+,64s+,53s+";
+    //let ip_range = "A2s+";
 
     let card_config = CardConfig {
         range: [oop_range.parse().unwrap(), ip_range.parse().unwrap()],
@@ -48,10 +48,10 @@ fn main() {
     // プレイヤーのプライベートハンドを取得
     let oop_cards = game.private_cards(0);
     let oop_cards_str = holes_to_strings(oop_cards).unwrap();
-    assert_eq!(
-        &oop_cards_str[..10],
-        &["5c4c", "Ac4c", "5d4d", "Ad4d", "5h4h", "Ah4h", "5s4s", "As4s", "6c5c", "7c5c"]
-    );
+    // assert_eq!(
+    //     &oop_cards_str[..10],
+    //     &["5c4c", "Ac4c", "5d4d", "Ad4d", "5h4h", "Ah4h", "5s4s", "As4s", "6c5c", "7c5c"]
+    // );
 
     // メモリ使用量を確認
     let (mem_usage, mem_usage_compressed) = game.memory_usage();
@@ -71,22 +71,35 @@ fn main() {
     // game.allocate_memory(true);
 
     // ゲームの解を求める
-    let max_num_iterations = 1000;
+    let max_num_iterations = u32::MAX; // 検証用に最大値を指定
     let target_exploitability = game.tree_config().starting_pot as f32 * 0.005; // ポットの0.5%
+    println!("目標可搾取量: {:?}", &target_exploitability);
+
+    // 計測開始
+    let start_time = Instant::now();
     let exploitability = solve(&mut game, max_num_iterations, target_exploitability, true);
+    // 計測終了
+    let duration = start_time.elapsed();
+    
+    
     // 計算量の導出
-    let num_private_hands = oop_cards_str.len() as i32;
-    println!("プレイヤーのハンド組み合わせ: {:?}", &num_private_hands);
-    println!("終端ノード数: {:?}", &num_terminal_nodes);
-    println!("可搾取量: {:?}", &exploitability);
-    let complexity = compute_complexity(num_private_hands , num_terminal_nodes, exploitability as f64);
-    println!("計算量: {:?}", complexity);
-
-    panic!("停止処理");
-
-    // println!("Exploitability: {:.2}", exploitability);
+    // 対戦相手のプライベートハンドを取得
+    let ip_cards = game.private_cards(1);
+    let ip_cards_str = holes_to_strings(ip_cards).unwrap();
+    let num_ip_private_hands = ip_cards_str.len() as i32;
+    let num_oop_private_hands = oop_cards_str.len() as i32;
 
     
+    println!("プレイヤーのハンド組み合わせ(Sに該当): {:?}", &num_oop_private_hands);
+    println!("対戦相手のハンド組み合わせ: {:?}", &num_ip_private_hands);
+    println!("終端ノード数(Dに該当): {:?}", &num_terminal_nodes);
+    println!("可搾取量(εに該当): {:?}", &exploitability);
+
+    let complexity = compute_complexity(&num_oop_private_hands , &num_terminal_nodes, &exploitability);
+    println!("計算量: {:?}", complexity);
+
+    println!("処理にかかった時間: {:?}", duration);
+    //println!("Exploitability: {:.2}", exploitability);
 
     // 手動でゲームの解を求める
     // for i in 0..max_num_iterations {
@@ -100,6 +113,9 @@ fn main() {
     //     }
     // }
     // finalize(&mut game);
+
+    // 以降の処理は動作確認処理になるため、ここで処理終了
+    panic!("処理終了");
 
     // 特定のハンドのエクイティとEVを取得
     game.cache_normalized_weights();
@@ -130,7 +146,7 @@ fn main() {
     assert_eq!(format!("{:?}", actions), "[Fold, Call, Raise(300)]");
 
     // IPがナッツストレートでフォールドしないことを確認
-    let ip_cards = game.private_cards(1);
+    // let ip_cards = game.private_cards(1);
     let strategy = game.strategy();
     assert_eq!(ip_cards.len(), 250);
     assert_eq!(strategy.len(), 750);
@@ -163,7 +179,5 @@ fn main() {
     // ルートノードに戻る
     game.back_to_root();
 
-    // 計測終了
-    let duration = start_time.elapsed();
-    println!("処理にかかった時間: {:?}", duration);
+    
 }
