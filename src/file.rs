@@ -230,8 +230,68 @@ pub fn load_data_from_file<T: FileData, P: AsRef<Path>>(
     path: P,
     max_memory_usage: Option<u64>,
 ) -> Result<(T, String), String> {
-    let file = File::open(path).map_err(|e| format!("Failed to open file: {}", e))?;
-    let mut reader = BufReader::new(file);
+    let path = path.as_ref();
+
+    // `FILE_FLAG_SEQUENTIAL_SCAN` helps Windows optimize readahead/caching for sequential reads.
+    #[cfg(windows)]
+    let file = {
+        use std::fs::OpenOptions;
+        use std::os::windows::fs::OpenOptionsExt;
+
+        const FILE_FLAG_SEQUENTIAL_SCAN: u32 = 0x08000000;
+
+        OpenOptions::new()
+            .read(true)
+            .custom_flags(FILE_FLAG_SEQUENTIAL_SCAN)
+            .open(path)
+    };
+
+    #[cfg(not(windows))]
+    let file = File::open(path);
+
+    let file = file.map_err(|e| format!("Failed to open file: {}", e))?;
+
+    // Use a large buffer to reduce syscalls and speed up bincode's small reads.
+    const MIN_CAPACITY: usize = 64 * 1024;
+    #[cfg(target_os = "linux")]
+    const MAX_CAPACITY: usize = 32 * 1024 * 1024;
+    #[cfg(not(target_os = "linux"))]
+    const MAX_CAPACITY: usize = 8 * 1024 * 1024;
+    const DEFAULT_CAPACITY: usize = 4 * 1024 * 1024;
+
+    let file_len = file.metadata().ok().map(|metadata| metadata.len());
+
+    #[cfg(target_os = "linux")]
+    {
+        use std::os::unix::io::AsRawFd;
+
+        extern "C" {
+            fn posix_fadvise(fd: i32, offset: i64, len: i64, advice: i32) -> i32;
+        }
+
+        const POSIX_FADV_SEQUENTIAL: i32 = 2;
+        const POSIX_FADV_WILLNEED: i32 = 3;
+
+        // Best-effort hints; ignore errors (e.g. some filesystems can reject advice).
+        unsafe {
+            let _ = posix_fadvise(file.as_raw_fd(), 0, 0, POSIX_FADV_SEQUENTIAL);
+
+            // Trigger readahead for smaller files to reduce IO latency; avoid cache thrash on huge files.
+            const WILLNEED_MAX_BYTES: u64 = 256 * 1024 * 1024;
+            if let Some(len) = file_len {
+                if len <= WILLNEED_MAX_BYTES {
+                    let _ = posix_fadvise(file.as_raw_fd(), 0, len as i64, POSIX_FADV_WILLNEED);
+                }
+            }
+        }
+    }
+
+    let capacity = file_len
+        .and_then(|len| usize::try_from(len).ok())
+        .map(|len| len.clamp(MIN_CAPACITY, MAX_CAPACITY))
+        .unwrap_or(DEFAULT_CAPACITY);
+
+    let mut reader = BufReader::with_capacity(capacity, file);
     load_data_from_std_read(&mut reader, max_memory_usage)
 }
 
